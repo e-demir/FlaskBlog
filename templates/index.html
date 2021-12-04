@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Blog{% endblock %}
+
+{% block content %}
+<h3>Son paylaştıklarım</h3>
+<h1>{{users}}</h1>
+<div class="articles">
+
+    {% for post in posts %}
+    <article>
+        <h4>{{post["post_title"]}}</h4>
+        <br>
+        <ul>
+
+            <li><span class="user">Yazar : {{post["name"]}}</span></li>
+            <li><span class="category">Kategori : {{post["category_name"]}}</span></li>
+            <li><span class="time">Kayıt Tarihi : {{ post["post_date"]|timeAgo }}</span></li>
+        </ul>
+        <br>
+        <a href="{{ url_for('post', url = post['post_url']) }}" class="show-btn">Görüntüle</a>
+    </article>
+    {% endfor %}
+
+</div>
+{% endblock %}
