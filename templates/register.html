@@ -4,7 +4,7 @@
 {% block content %}
 <h3>Kayıt ol</h3>
 
-<form action="" method="POST" class="form">
+<form action="register" method="POST" class="form">
 
     {% if error %}
         <div class="error">
@@ -26,8 +26,8 @@
             <input type="password" id="password" name="password" value="{{ request.form['password'] }}">
         </li>
         <li>
-            <label for="repassword">Şifre (Tekrar)</label>
-            <input type="password" id="repassword" name="re_password" value="{{ request.form['re_password'] }}">
+            <label for="repass">Şifre (Tekrar)</label>
+            <input type="password" id="repass" name=repass value="{{ request.form['repass'] }}">
         </li>
         <li>
             <button type="submit">Kayıt ol</button>
