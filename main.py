@@ -15,43 +15,58 @@ db = mysql.connector.connect(
 )
 cursor = db.cursor(dictionary=True, buffered=True)
 
+
 def categories():
     sql = "SELECT * FROM categories ORDER BY category_name ASC"
     cursor.execute(sql)
     cats = cursor.fetchall()
     return cats
 
+
 def timeAgo(date):
     return timeago.format(date, datetime.datetime.now(), "tr")
+
 
 def md5(str):
     return hashlib.md5(str.encode()).hexdigest()
 
+
+def hasPost(url):
+    sql = "select post_id from posts where post_url = %s"
+    cursor.execute(sql, (url,))
+    post = cursor.fetchone()
+    return post
+
+
 app.jinja_env.globals.update(cats=categories, timeAgo=timeAgo)
 app.jinja_env.filters["timeAgo"] = timeAgo
 
-@app.route("/newpost", methods=["GET","POST"])
+
+@app.route("/newpost", methods=["GET", "POST"])
 def newPost():
     error = ""
     if request.method == "POST":
-        if request.form["title"] == "":
+        if request.form["title"] == '':
             error = "Başlık Boş Bırakılamaz"
         elif request.form["content"] == "":
             error = "İçerik Boş Bıraklamaz"
         elif request.form["category_id"] == "":
             error = "Kategori Seçimi Yapınız"
+        elif hasPost(slugify(request.form['title'])):
+            error = "Bu isimle bir makale mevcut"
         else:
             sql = "insert into posts set post_title = %s, post_url = %s, post_content = %s, post_user_id = %s," \
                   " post_category_id = %s, post_date = %s "
             cursor.execute(sql, (request.form["title"], slugify(request.form["title"]), request.form["content"],
                                  session["user_id"], request.form["category_id"], str(datetime.datetime.now())))
-        db.commit()
-        if cursor.rowcount:
-            return redirect(url_for('post', url=slugify(request.form['title'])))
-        else:
-            error = "Hata oluştu"
+            db.commit()
+            if cursor.rowcount:
+                return redirect(url_for('post', url=slugify(request.form['title'])))
+            else:
+                error = "Hata oluştu"
 
     return render_template("newpost.html", error=error)
+
 
 @app.route("/")
 def home():
@@ -63,10 +78,10 @@ def home():
     return render_template("index.html", posts=posts)
 
 
-@app.route("/login", methods=["GET","POST"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
     if "user_id" in session:
-        return  redirect(url_for("home"))
+        return redirect(url_for("home"))
 
     error = ""
     if request.method == "POST":
@@ -76,14 +91,14 @@ def login():
             error = "Şifrenizi giriniz"
         else:
             sql = "select * from users where email = %s && password = %s "
-            cursor.execute(sql, (request.form["email"],hashlib.md5((request.form["password"]).encode()).hexdigest(), ))
+            cursor.execute(sql, (request.form["email"], hashlib.md5((request.form["password"]).encode()).hexdigest(),))
             user = cursor.fetchone()
             if user:
                 session["user_id"] = user["id"]
-                return  redirect(url_for("home"))
+                return redirect(url_for("home"))
             else:
                 error = "Kullanıcı bulunamadı..."
-    return render_template("login.html",error=error)
+    return render_template("login.html", error=error)
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -112,6 +127,7 @@ def register():
 
     return render_template("register.html", error=error)
 
+
 @app.route("/logout")
 def logout():
     session.clear()
@@ -131,9 +147,9 @@ def post(url):
     else:
         return redirect(url_for('home'))
 
+
 @app.route("/category/<url>")
 def category(url):
-
     cursor.execute("select * from categories where category_url = %s ", (url,))
     categ = cursor.fetchone()
 
@@ -143,11 +159,12 @@ def category(url):
               "INNER JOIN categories ON categories.category_id = posts.post_category_id " \
               "WHERE post_category_id = %s " \
               "ORDER BY post_id DESC "
-        cursor.execute(sql, (categ["category_id"], ))
+        cursor.execute(sql, (categ["category_id"],))
         posts = cursor.fetchall()
         return render_template("category.html", category=categ, posts=posts)
     else:
         return redirect(url_for("home"))
+
 
 @app.errorhandler(404)
 def page_not_found(error):
