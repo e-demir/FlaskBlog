@@ -3,15 +3,17 @@ import mysql.connector
 import timeago, datetime
 import hashlib
 from slugify import slugify
+
 app = Flask(__name__)
 app.secret_key = b"emrullahdemir"
+
 db = mysql.connector.connect(
     host="localhost",
     user="root",
     password="Ee10.dmr",
     database="python"
 )
-cursor = db.cursor(dictionary=True)
+cursor = db.cursor(dictionary=True, buffered=True)
 
 def categories():
     sql = "SELECT * FROM categories ORDER BY category_name ASC"
@@ -40,7 +42,7 @@ def newPost():
             error = "Kategori Seçimi Yapınız"
         else:
             sql = "insert into posts set post_title = %s, post_url = %s, post_content = %s, post_user_id = %s," \
-                  " post_category_id = %s, post_date = %s"
+                  " post_category_id = %s, post_date = %s "
             cursor.execute(sql, (request.form["title"], slugify(request.form["title"]), request.form["content"],
                                  session["user_id"], request.form["category_id"], str(datetime.datetime.now())))
         db.commit()
@@ -121,18 +123,18 @@ def post(url):
     sql = "SELECT * FROM posts " \
           "INNER JOIN users ON users.id = posts.post_user_id " \
           "INNER JOIN categories ON categories.category_id = posts.post_category_id " \
-          "WHERE post_url = %s"
+          "WHERE post_url = %s "
     cursor.execute(sql, (url,))
-    post = cursor.fetchone()
-    if post:
-        return render_template('post.html', post=post)
+    thepost = cursor.fetchone()
+    if thepost:
+        return render_template('post.html', post=thepost)
     else:
         return redirect(url_for('home'))
 
 @app.route("/category/<url>")
 def category(url):
 
-    cursor.execute("select * from categories where category_url = %s", (url,))
+    cursor.execute("select * from categories where category_url = %s ", (url,))
     categ = cursor.fetchone()
 
     if categ:
@@ -141,7 +143,7 @@ def category(url):
               "INNER JOIN categories ON categories.category_id = posts.post_category_id " \
               "WHERE post_category_id = %s " \
               "ORDER BY post_id DESC "
-        cursor.execute(sql, (categ["category_id"],))
+        cursor.execute(sql, (categ["category_id"], ))
         posts = cursor.fetchall()
         return render_template("category.html", category=categ, posts=posts)
     else:
